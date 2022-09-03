@@ -2,12 +2,15 @@ package com.dmdev.junit;
 
 import com.dmdev.junit.dto.User;
 import com.dmdev.junit.service.UserService;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -32,6 +35,7 @@ public class UserServiceTest {
     void usersEmptyIfNoUserAdded() {
         System.out.println("Test 1: " + this);
         var users = userService.getAll();
+        MatcherAssert.assertThat(users, IsEmptyCollection.empty());
         assertTrue(users.isEmpty(), () -> "User list should be empty");
     }
 
@@ -41,15 +45,17 @@ public class UserServiceTest {
         userService.add(IVAN);
         userService.add(PETR);
         var users = userService.getAll();
-        assertEquals(2, users.size());
+        assertThat(users).hasSize(2);
+        // assertEquals(2, users.size());
     }
 
     @Test
     void loginSuccessIfUserExists() {
         userService.add(IVAN);
         Optional<User> mayBeUser = userService.login(IVAN.getUserName(), IVAN.getPassword());
-        assertTrue(mayBeUser.isPresent());
-        mayBeUser.ifPresent(user -> assertEquals(IVAN, user));
+        assertThat(mayBeUser).isPresent();
+        mayBeUser.ifPresent(user -> assertThat(user).isEqualTo(IVAN));
+        //mayBeUser.ifPresent(user -> assertEquals(IVAN, user));
     }
 
     @Test
@@ -58,11 +64,45 @@ public class UserServiceTest {
         var mayBeUser = userService.login(IVAN.getUserName(), "12343");
         assertTrue(mayBeUser.isEmpty());
     }
+
     @Test
     void loginFailIfUserDoesNotExist() {
         userService.add(IVAN);
         var mayBeUser = userService.login("dummy", IVAN.getPassword());
         assertTrue(mayBeUser.isEmpty());
+    }
+
+    @Test
+    void usersConvertedToMapById() {
+        userService.add(IVAN, PETR);
+        var users = userService.getAllConvertedById();
+        assertAll(() -> assertThat(users).containsKeys(IVAN.getId(), PETR.getId()),
+                () -> assertThat(users).containsValues(IVAN, PETR)
+        );
+        MatcherAssert.assertThat(users, IsMapContaining.hasKey(IVAN.getId()));
+//        assertThat(users).containsKeys(IVAN.getId(), PETR.getId());
+//        assertThat(users).containsValues(IVAN, PETR);
+    }
+
+    @Test
+//    @org.junit.Test(expected = IllegalArgumentException.class)
+    void throwExceptionIfUsernameOrPasswordIsNull() {
+        Assertions.assertAll(
+                () -> {
+                    var exception = assertThrows(IllegalArgumentException.class,
+                            () -> userService.login(null, "dummy"));
+                    assertThat(exception.getMessage()).isEqualTo("username or password is null");
+                },
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> userService.login("dummy", null))
+        );
+//        try {
+//            userService.login(null,"dummy");
+//            fail("login should throw exception on null username");
+//        }
+//        catch (IllegalArgumentException e){
+//            assertTrue(true);
+//        }
     }
 
     @AfterEach
