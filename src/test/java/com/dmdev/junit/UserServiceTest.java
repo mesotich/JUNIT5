@@ -1,11 +1,13 @@
 package com.dmdev.junit;
 
 import com.dmdev.junit.dto.User;
+import com.dmdev.junit.paramresolver.UserTestParamResolver;
 import com.dmdev.junit.service.UserService;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Optional;
 
@@ -17,11 +19,16 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle;
 @Tag("user")
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.DisplayName.class)
+@ExtendWith(UserTestParamResolver.class)
 public class UserServiceTest {
 
     private static final User IVAN = User.of(1, "Ivan", "123");
     private static final User PETR = User.of(2, "Petr", "111");
     private UserService userService;
+
+    UserServiceTest(TestInfo testInfo) {
+        System.out.println();
+    }
 
     @BeforeAll
     void init() {
@@ -29,18 +36,19 @@ public class UserServiceTest {
     }
 
     @BeforeEach
-    void prepare() {
-        userService = new UserService();
+    void prepare(UserService userService) {
         System.out.println("Before each: " + this);
+        this.userService = userService;
     }
 
     @Test
     @DisplayName("users will be empty if no users added")
-    void usersEmptyIfNoUserAdded() {
+    void usersEmptyIfNoUserAdded(UserService userService) {
         System.out.println("Test 1: " + this);
         var users = userService.getAll();
         MatcherAssert.assertThat(users, IsEmptyCollection.empty());
         assertTrue(users.isEmpty(), () -> "User list should be empty");
+        this.userService = userService;
     }
 
     @Test
