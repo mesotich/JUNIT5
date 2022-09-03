@@ -8,8 +8,13 @@ import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,6 +78,27 @@ public class UserServiceTest {
 //        assertThat(users).containsValues(IVAN, PETR);
     }
 
+    @ParameterizedTest(name = "{arguments} test")
+
+    //@ArgumentsSource()
+//    @NullSource
+//    @EmptySource
+//            @NullAndEmptySource
+//    @ValueSource(strings = {"Ivan", "Petr"})
+//    @EnumSource
+    @MethodSource(value = "com.dmdev.junit.UserServiceTest#getArgumentsForLoginTest")
+//    @CsvFileSource(resources = "/login-test-data.csv",delimiter = ',',numLinesToSkip = 1)
+//    @CsvSource({
+//            "Ivan,123",
+//            "Petr,111"
+//    })
+    @DisplayName("login param test")
+    void loginParameterizedTest(String username, String password, Optional<User> user) {
+        userService.add(IVAN, PETR);
+        var mayBeUser = userService.login(username, password);
+        assertThat(mayBeUser).isEqualTo(user);
+    }
+
     @AfterEach
     void deleteDataFromDataBase() {
         System.out.println("AfterEach: " + this);
@@ -131,5 +157,14 @@ public class UserServiceTest {
 //            assertTrue(true);
 //        }
         }
+    }
+
+    static Stream<Arguments> getArgumentsForLoginTest() {
+        return Stream.of(
+                Arguments.of("Ivan", "123", Optional.of(IVAN)),
+                Arguments.of("Petr", "111", Optional.of(PETR)),
+                Arguments.of("dummy", "123", Optional.empty()),
+                Arguments.of("Ivan", "dummy", Optional.empty())
+        );
     }
 }
