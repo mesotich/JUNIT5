@@ -1,7 +1,10 @@
 package com.dmdev.junit;
 
 import com.dmdev.junit.dto.User;
-import com.dmdev.junit.paramresolver.UserTestParamResolver;
+import com.dmdev.junit.extension.ConditionalExtension;
+import com.dmdev.junit.extension.PostProcessingExtension;
+import com.dmdev.junit.extension.ThrowableExtension;
+import com.dmdev.junit.extension.UserTestParamResolver;
 import com.dmdev.junit.service.UserService;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -12,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -25,8 +29,13 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle;
 @Tag("user")
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.DisplayName.class)
-@ExtendWith(UserTestParamResolver.class)
-public class UserServiceTest {
+@ExtendWith({
+        UserTestParamResolver.class,
+        PostProcessingExtension.class,
+        ConditionalExtension.class,
+        ThrowableExtension.class
+})
+public class UserServiceTest extends TestBase {
 
     private static final User IVAN = User.of(1, "Ivan", "123");
     private static final User PETR = User.of(2, "Petr", "111");
@@ -49,7 +58,9 @@ public class UserServiceTest {
 
     @Test
     @DisplayName("users will be empty if no users added")
-    void usersEmptyIfNoUserAdded(UserService userService) {
+    void usersEmptyIfNoUserAdded(UserService userService) throws IOException {
+        if(true)
+            throw new RuntimeException();
         System.out.println("Test 1: " + this);
         var users = userService.getAll();
         MatcherAssert.assertThat(users, IsEmptyCollection.empty());
@@ -140,7 +151,8 @@ public class UserServiceTest {
         }
 
         @Test
-        @Timeout(value = 200,unit = TimeUnit.MILLISECONDS)
+        @Disabled
+        @Timeout(value = 200, unit = TimeUnit.MILLISECONDS)
         void checkLoginFunctionalityPerformance() {
             System.out.println(Thread.currentThread().getName());
             var mayBeUser = assertTimeoutPreemptively(Duration.ofMillis(200L), () -> {
