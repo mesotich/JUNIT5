@@ -1,5 +1,6 @@
 package com.dmdev.junit.service;
 
+import com.dmdev.junit.dao.UserDAO;
 import com.dmdev.junit.dto.User;
 
 import java.util.*;
@@ -9,6 +10,14 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final List<User> users = new ArrayList<>();
+    private final UserDAO userDAO;
+
+    public UserService(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+    public boolean delete(Integer userId){
+        return userDAO.delete(userId);
+    }
 
     public List<User> getAll() {
         return users;
