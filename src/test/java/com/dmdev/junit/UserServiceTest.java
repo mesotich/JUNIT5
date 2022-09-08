@@ -14,9 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.mockito.verification.VerificationMode;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -27,6 +26,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
+import static org.mockito.Mockito.*;
 
 @Tag("fast")
 @Tag("user")
@@ -36,14 +36,19 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle;
         UserTestParamResolver.class,
         PostProcessingExtension.class,
         ConditionalExtension.class,
+        MockitoExtension.class
         //ThrowableExtension.class
 })
 public class UserServiceTest extends TestBase {
 
     private static final User IVAN = User.of(1, "Ivan", "123");
     private static final User PETR = User.of(2, "Petr", "111");
-    private UserService userService;
+    @Captor
+    private ArgumentCaptor<Integer> argumentCaptor;
+    @Mock(lenient = true)
     private UserDAO userDAO;
+    @InjectMocks
+    private UserService userService;
 
     UserServiceTest(TestInfo testInfo) {
         System.out.println();
@@ -57,14 +62,20 @@ public class UserServiceTest extends TestBase {
     @BeforeEach
     void prepare() {
         System.out.println("Before each: " + this);
-        this.userDAO = Mockito.spy(new UserDAO());
-        this.userService = new UserService(userDAO);
+        lenient().when(userDAO.delete(IVAN.getId())).thenReturn(true);
+        doReturn(true).when(userDAO).delete(IVAN.getId());
+    }
+
+    @Test
+    void throwExceptionIfDatabaseIsNotAvailable() {
+        doThrow(RuntimeException.class).when(userDAO).delete(IVAN.getId());
+        assertThrows(RuntimeException.class, () -> userService.delete(IVAN.getId()));
     }
 
     @Test
     void shouldDeleteExistUser() {
         userService.add(IVAN);
-        Mockito.doReturn(true).when(userDAO).delete(IVAN.getId());
+//        Mockito.doReturn(true).when(userDAO).delete(IVAN.getId());
         //Mockito.doReturn(true).when(userDAO.delete(Mockito.any()));
 //        Mockito.when(userDAO.delete(IVAN.getId()))
 //                .thenReturn(true)
@@ -72,9 +83,9 @@ public class UserServiceTest extends TestBase {
         var deleteResult = userService.delete(IVAN.getId());
         System.out.println(userService.delete(IVAN.getId()));
         System.out.println(userService.delete(IVAN.getId()));
-        var argumentCaptor   = ArgumentCaptor.forClass(Integer.class);
-        Mockito.verify(userDAO, Mockito.times(3)).delete(argumentCaptor.capture());
-        assertThat(argumentCaptor.getValue()).isEqualTo(25);
+        verify(userDAO, times(3)).delete(argumentCaptor.capture());
+//        Mockito.reset(userDAO);
+        assertThat(argumentCaptor.getValue()).isEqualTo(1);
         assertTrue(deleteResult);
     }
 
