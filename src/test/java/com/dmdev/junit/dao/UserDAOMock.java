@@ -1,7 +1,5 @@
 package com.dmdev.junit.dao;
 
-import org.mockito.stubbing.Answer1;
-
 import java.util.HashMap;
 import java.util.Map;
 
