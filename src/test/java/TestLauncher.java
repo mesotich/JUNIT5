@@ -5,7 +5,6 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 
-import java.io.FileFilter;
 import java.io.PrintWriter;
 
 public class TestLauncher {
